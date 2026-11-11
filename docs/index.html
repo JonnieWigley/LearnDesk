@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://*.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#4f46e5">
+<title>LearnDesk</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1 id="title">LearnDesk</h1>
+  <button id="sync" type="button" aria-label="Sync now"><span id="sync-dot"></span><span id="sync-text"></span></button>
+</header>
+<main id="main"></main>
+<nav id="nav" aria-label="Sections"></nav>
+<script src="app.js" defer></script>
+</body>
+</html>
