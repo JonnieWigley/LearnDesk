@@ -287,8 +287,7 @@ const TABS = [['ideas', 'Ideas'], ['journal', 'Journal'], ['quiz', 'Quiz'], ['to
 const ui = {
   tab: 'ideas',
   notice: '',
-  ideaFilter: 'open',
-  ideaKind: 'Create',
+  ideaFilter: 'create',
   todoFilter: 'open',
   expanded: new Set(),
   drafts: { idea: '', todo: '', topic: '', journal: '' },
@@ -334,11 +333,15 @@ function checkButton(done, onToggle) {
 
 function addIdea() {
   const title = ui.drafts.idea.trim();
-  if (!title) return;
-  add('idea', { id: newID(), title, note: '', kind: ui.ideaKind, done: false, created: nowISO() });
+  const kind = IDEA_KINDS[ui.ideaFilter];
+  if (!title || !kind) return;
+  add('idea', { id: newID(), title, note: '', kind, done: false, created: nowISO() });
   ui.drafts.idea = '';
   render();
 }
+
+// The Create and Research headers are also where new ideas get added.
+const IDEA_KINDS = { create: 'Create', research: 'Research' };
 
 function viewIdeas() {
   const visible = data.ideas.filter((idea) => {
@@ -346,19 +349,18 @@ function viewIdeas() {
     if (ui.ideaFilter === 'open') return !idea.done;
     return !idea.done && idea.kind.toLowerCase() === ui.ideaFilter;
   });
+  const kind = IDEA_KINDS[ui.ideaFilter];
 
   return [
-    h('div', { class: 'row' },
+    segmented([['create', 'Create'], ['research', 'Research'], ['open', 'Open'], ['done', 'Complete']], ui.ideaFilter,
+      (value) => { ui.ideaFilter = value; render(); }),
+    kind && h('div', { class: 'row' },
       h('input', {
-        type: 'text', class: 'grow', placeholder: 'Add an idea…', value: ui.drafts.idea, enterKeyHint: 'done', 'aria-label': 'New idea',
+        type: 'text', class: 'grow', placeholder: `Add to ${kind}…`, value: ui.drafts.idea, enterKeyHint: 'done', 'aria-label': `New ${kind} idea`,
         oninput: (e) => { ui.drafts.idea = e.target.value; },
         onkeydown: (e) => { if (e.key === 'Enter') addIdea(); },
       }),
-      h('select', { 'aria-label': 'Kind', onchange: (e) => { ui.ideaKind = e.target.value; } },
-        ['Create', 'Research'].map((kind) => h('option', { value: kind, selected: kind === ui.ideaKind }, kind))),
       h('button', { type: 'button', class: 'icon', 'aria-label': 'Add idea', onclick: addIdea }, '+')),
-    segmented([['create', 'Create'], ['research', 'Research'], ['open', 'Open'], ['done', 'Complete']], ui.ideaFilter,
-      (value) => { ui.ideaFilter = value; render(); }),
     visible.length === 0 && h('p', { class: 'muted center' }, ui.ideaFilter === 'done' ? 'Nothing completed yet.' : 'Nothing added here yet.'),
     visible.map(ideaCard),
   ];

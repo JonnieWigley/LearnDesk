@@ -10,8 +10,16 @@ struct IdeasView: View {
 
     @EnvironmentObject var store: Store
     @State private var title = ""
-    @State private var kind: Idea.Kind = .create
-    @State private var filter: Filter = .open
+    @State private var filter: Filter = .create
+
+    /// The Create and Research headers are also where new ideas get added.
+    private var kind: Idea.Kind? {
+        switch filter {
+        case .create: return .create
+        case .research: return .research
+        case .open, .done: return nil
+        }
+    }
 
     private var visible: [Idea] {
         store.data.ideas.filter { idea in
@@ -26,28 +34,25 @@ struct IdeasView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 6) {
-                TextField("Add an idea…", text: $title)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit(add)
-                Picker("", selection: $kind) {
-                    ForEach(Idea.Kind.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                .labelsHidden()
-                .fixedSize()
-                Button(action: add) {
-                    Image(systemName: "plus")
-                }
-                .help("Add idea")
-                .disabled(trimmedTitle.isEmpty)
-            }
-
             Picker("", selection: $filter) {
                 ForEach(Filter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
             .controlSize(.small)
+
+            if let kind {
+                HStack(spacing: 6) {
+                    TextField("Add to \(kind.rawValue)…", text: $title)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit(add)
+                    Button(action: add) {
+                        Image(systemName: "plus")
+                    }
+                    .help("Add idea")
+                    .disabled(trimmedTitle.isEmpty)
+                }
+            }
 
             ScrollView {
                 LazyVStack(spacing: 6) {
@@ -71,7 +76,7 @@ struct IdeasView: View {
     }
 
     private func add() {
-        guard !trimmedTitle.isEmpty else { return }
+        guard let kind, !trimmedTitle.isEmpty else { return }
         store.addIdea(title: trimmedTitle, kind: kind)
         title = ""
     }
