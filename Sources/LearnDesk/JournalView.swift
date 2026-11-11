@@ -14,18 +14,8 @@ struct JournalView: View {
     var body: some View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    TextField("Topic, e.g. C#", text: $topic)
-                        .textFieldStyle(.roundedBorder)
-                    if !store.topics.isEmpty {
-                        Menu("Recent") {
-                            ForEach(store.topics, id: \.self) { name in
-                                Button(name) { topic = name }
-                            }
-                        }
-                        .fixedSize()
-                    }
-                }
+                TextField("Topic, e.g. C#", text: $topic)
+                    .textFieldStyle(.roundedBorder)
                 TextEditor(text: $text)
                     .editorBox(height: 96)
                     .overlay(alignment: .topLeading) {

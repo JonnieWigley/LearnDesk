@@ -479,14 +479,12 @@ function logEntry() {
 }
 
 function viewJournal() {
-  const topics = [...new Set(data.entries.map((e) => e.topic))];
   return [
     h('div', { class: 'stack' },
       h('input', {
-        type: 'text', placeholder: 'Topic, e.g. C#', value: ui.drafts.topic, list: 'topics', 'aria-label': 'Topic',
+        type: 'text', placeholder: 'Topic, e.g. C#', value: ui.drafts.topic, autocomplete: 'off', 'aria-label': 'Topic',
         oninput: (e) => { ui.drafts.topic = e.target.value; },
       }),
-      h('datalist', { id: 'topics' }, topics.map((topic) => h('option', { value: topic }))),
       h('textarea', {
         placeholder: 'What did you learn?', value: ui.drafts.journal, 'aria-label': 'What did you learn?',
         oninput: (e) => { ui.drafts.journal = e.target.value; },
