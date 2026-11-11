@@ -195,9 +195,11 @@ enum Claude {
     private static func run(_ executable: URL, arguments: [String], input: String) async throws
         -> (stdout: String, stderr: String)
     {
-        let workDir = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("LearnDesk/claude-code", isDirectory: true)
+        // Claude Code inspects the git repository it starts in. Start it in an empty folder
+        // outside the home folder, so it can never end up scanning a repository that covers
+        // Music, Movies, Documents and so on (which makes macOS ask for access to all of them).
+        let workDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LearnDesk-claude-code", isDirectory: true)
         try? FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -214,6 +216,8 @@ enum Claude {
                 // Make sure it bills the subscription, never a stray API key.
                 environment.removeValue(forKey: "ANTHROPIC_API_KEY")
                 environment.removeValue(forKey: "ANTHROPIC_AUTH_TOKEN")
+                // And stop git looking for a repository in any folder above the empty one.
+                environment["GIT_CEILING_DIRECTORIES"] = workDir.deletingLastPathComponent().path
                 process.environment = environment
 
                 let stdin = Pipe()
