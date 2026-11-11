@@ -19,7 +19,9 @@ self.addEventListener('fetch', (event) => {
   // Only the app's own files. Supabase calls are never touched or cached.
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
   event.respondWith(
-    fetch(event.request)
+    // 'no-cache' makes the browser check with the server every time, so an update shows on the
+    // next launch instead of waiting out the ten minutes GitHub Pages lets files be reused for.
+    fetch(event.request, { cache: 'no-cache' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
