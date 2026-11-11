@@ -20,7 +20,15 @@ struct GradeResult: Decodable {
 enum Claude {
     /// Blank means whatever model Claude Code uses by default.
     static var model: String {
-        (UserDefaults.standard.string(forKey: Prefs.model) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let saved = (UserDefaults.standard.string(forKey: Prefs.model) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // A full model id is passed through as it is.
+        if saved.lowercased().hasPrefix("claude-"), !saved.contains(" ") { return saved.lowercased() }
+        // Claude Code only understands the short names, so "Haiku 5.5" has to become "haiku".
+        for family in ["haiku", "sonnet", "opus"] where saved.lowercased().contains(family) {
+            return family
+        }
+        return saved
     }
 
     /// Where the `claude` command lives, or nil if it can't be found.

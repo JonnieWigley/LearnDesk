@@ -38,8 +38,19 @@ struct SettingsView: View {
                     Text("Questions and answer checks run through Claude Code, so they count against your Claude subscription's usage. When you hit the limit they pause until it resets.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TextField("Model (blank = Claude Code's default; e.g. sonnet)", text: $model)
-                        .textFieldStyle(.roundedBorder)
+                    Picker("Model", selection: Binding(
+                        get: { Claude.model },
+                        set: { model = $0 }
+                    )) {
+                        Text("Claude Code's default").tag("")
+                        Text("Haiku (uses least of your allowance)").tag("haiku")
+                        Text("Sonnet").tag("sonnet")
+                        Text("Opus").tag("opus")
+                        // A full model id set by hand stays selectable.
+                        if !["", "haiku", "sonnet", "opus"].contains(Claude.model) {
+                            Text(Claude.model).tag(Claude.model)
+                        }
+                    }
                     TextField("Location of claude (blank = find automatically)", text: $claudePath)
                         .textFieldStyle(.roundedBorder)
                     Button("Check Again") {
