@@ -329,6 +329,76 @@ function checkButton(done, onToggle) {
   }, done ? '✓' : '');
 }
 
+// Wraps a list card so that swiping it left deletes it. A short swipe springs back;
+// the card has to be dragged past the threshold (the red strip turns solid) to delete.
+function swipeToDelete(card, onDelete) {
+  const wrap = h('div', { class: 'swipe' }, h('div', { class: 'swipe-under', 'aria-hidden': 'true' }, 'Delete'), card);
+  let pointer = null;
+  let mode = null; // null: undecided, 'swipe': ours, 'ignore': a scroll or a rightward drag
+  let startX = 0;
+  let startY = 0;
+  let dx = 0;
+  let justSwiped = false;
+  const threshold = () => Math.min(140, wrap.offsetWidth * 0.4);
+
+  card.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' || e.target.closest('input, textarea, select')) return;
+    pointer = e.pointerId;
+    mode = null;
+    startX = e.clientX;
+    startY = e.clientY;
+    dx = 0;
+  });
+
+  card.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pointer) return;
+    const moveX = e.clientX - startX;
+    const moveY = e.clientY - startY;
+    if (!mode) {
+      if (Math.abs(moveX) < 10 && Math.abs(moveY) < 10) return;
+      mode = moveX < 0 && Math.abs(moveX) > Math.abs(moveY) ? 'swipe' : 'ignore';
+      if (mode === 'swipe') {
+        try { card.setPointerCapture(pointer); } catch { /* the pointer already ended */ }
+        card.style.transition = '';
+        wrap.classList.add('swiping');
+      }
+    }
+    if (mode !== 'swipe') return;
+    dx = Math.min(0, moveX);
+    card.style.transform = `translateX(${dx}px)`;
+    wrap.classList.toggle('armed', -dx >= threshold());
+  });
+
+  const finish = (e) => {
+    if (e.pointerId !== pointer) return;
+    pointer = null;
+    if (mode !== 'swipe') return;
+    mode = null;
+    justSwiped = true;
+    setTimeout(() => { justSwiped = false; }, 350);
+    card.style.transition = 'transform .18s ease';
+    if (e.type === 'pointerup' && -dx >= threshold()) {
+      card.style.transform = 'translateX(-110%)';
+      setTimeout(() => { onDelete(); render(); }, 180);
+    } else {
+      card.style.transform = '';
+      wrap.classList.remove('armed');
+      setTimeout(() => { wrap.classList.remove('swiping'); card.style.transition = ''; }, 180);
+    }
+  };
+  card.addEventListener('pointerup', finish);
+  card.addEventListener('pointercancel', finish);
+
+  // The tap that ends a swipe shouldn't also open the card or tick it off.
+  wrap.addEventListener('click', (e) => {
+    if (!justSwiped) return;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
+  return wrap;
+}
+
 // ---------- Ideas ----------
 
 function addIdea() {
@@ -392,7 +462,7 @@ function ideaCard(idea) {
       h('button', { type: 'button', class: 'btn sm danger right', onclick: () => { remove('idea', idea.id); render(); } }, 'Delete')),
     !open && idea.note && h('div', { class: 'muted small clamp pre' }, idea.note));
   if (idea.color) card.style.setProperty('--tint', `var(--${idea.color})`);
-  return card;
+  return swipeToDelete(card, () => remove('idea', idea.id));
 }
 
 // ---------- Journal ----------
@@ -432,7 +502,7 @@ function entryCard(entry) {
   const open = ui.expanded.has(entry.id);
   const count = data.cards.filter((c) => c.entryID === entry.id).length;
   const status = count ? plural(count, 'question') : entry.needsQuestions ? 'Waiting for your Mac' : '';
-  return h('div', { class: 'card stack' },
+  return swipeToDelete(h('div', { class: 'card stack' },
     h('div', { class: 'row' },
       h('span', { class: 'tag' }, entry.topic),
       h('span', { class: 'muted small' }, dateText(entry.created)),
@@ -440,7 +510,8 @@ function entryCard(entry) {
     h('div', { class: `pre${open ? '' : ' clamp'}`, onclick: () => toggleExpanded(entry.id) }, entry.text),
     h('div', { class: 'row' },
       h('button', { type: 'button', class: 'link', onclick: () => toggleExpanded(entry.id) }, open ? 'Less' : 'More'),
-      open && h('button', { type: 'button', class: 'btn sm danger right', onclick: () => { removeEntry(entry.id); render(); } }, 'Delete')));
+      open && h('button', { type: 'button', class: 'btn sm danger right', onclick: () => { removeEntry(entry.id); render(); } }, 'Delete'))),
+  () => removeEntry(entry.id));
 }
 
 // ---------- Quiz ----------
@@ -558,7 +629,7 @@ function viewTodo() {
       const open = ui.expanded.has(todo.id);
       const overdue = todo.due && !todo.done && new Date(todo.due) < startOfToday;
       const dueValue = todo.due ? new Date(new Date(todo.due).getTime() - new Date(todo.due).getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '';
-      return h('div', { class: 'card stack' },
+      return swipeToDelete(h('div', { class: 'card stack' },
         h('div', { class: 'row top' },
           checkButton(todo.done, () => { todo.done = !todo.done; touch(todo); render(); }),
           h('div', { class: `grow pre${todo.done ? ' done-text' : ''}`, onclick: () => toggleExpanded(todo.id) }, todo.title),
@@ -573,7 +644,8 @@ function viewTodo() {
               ui.pendingRender = true;
             },
           }),
-          h('button', { type: 'button', class: 'btn sm danger', onclick: () => { remove('todo', todo.id); render(); } }, 'Delete')));
+          h('button', { type: 'button', class: 'btn sm danger', onclick: () => { remove('todo', todo.id); render(); } }, 'Delete'))),
+      () => remove('todo', todo.id));
     }),
   ];
 }
