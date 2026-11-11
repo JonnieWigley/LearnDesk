@@ -522,7 +522,7 @@ function viewJournal() {
   if (ui.editing && !data.entries.some((e) => e.id === ui.editing)) endEdit();
   const editing = Boolean(ui.editing);
   return [
-    h('div', { class: 'stack' },
+    h('div', { class: 'stack gap-below' },
       editing && h('div', { class: 'label' }, 'Editing an earlier entry'),
       h('input', {
         type: 'text', placeholder: 'Topic, e.g. C#', value: ui.drafts.topic, autocomplete: 'off', 'aria-label': 'Topic',
