@@ -290,6 +290,8 @@ const ui = {
   ideaFilter: 'create',
   todoFilter: 'open',
   expanded: new Set(),
+  editing: null, // id of the journal entry loaded into the form
+  setAside: null,
   drafts: { idea: '', todo: '', topic: '', journal: '' },
   quiz: { queue: [], phase: 'answering', answer: '', answered: 0 },
   settingsMessage: '',
@@ -478,9 +480,50 @@ function logEntry() {
   render();
 }
 
+// Tapping an entry loads it into the form at the top for editing. Anything half-typed
+// there is set aside and put back when the edit is saved or cancelled.
+function editEntry(entry) {
+  if (ui.editing === entry.id) return;
+  if (!ui.editing) ui.setAside = { topic: ui.drafts.topic, journal: ui.drafts.journal };
+  ui.editing = entry.id;
+  ui.drafts.topic = entry.topic;
+  ui.drafts.journal = entry.text;
+  render();
+  document.getElementById('main').scrollTop = 0;
+}
+
+function endEdit() {
+  ui.editing = null;
+  ui.drafts.topic = ui.setAside ? ui.setAside.topic : '';
+  ui.drafts.journal = ui.setAside ? ui.setAside.journal : '';
+  ui.setAside = null;
+}
+
+function saveEntryEdit() {
+  const entry = data.entries.find((e) => e.id === ui.editing);
+  const topic = ui.drafts.topic.trim();
+  const text = ui.drafts.journal.trim();
+  if (!entry || !topic || !text) return;
+  if (topic !== entry.topic || text !== entry.text) {
+    // Questions already written from this entry are kept; they just follow a renamed topic.
+    if (topic !== entry.topic) {
+      for (const card of data.cards.filter((c) => c.entryID === entry.id)) { card.topic = topic; touch(card); }
+    }
+    entry.topic = topic;
+    entry.text = text;
+    touch(entry);
+  }
+  endEdit();
+  render();
+}
+
 function viewJournal() {
+  // The entry being edited may have been deleted here or on the Mac in the meantime.
+  if (ui.editing && !data.entries.some((e) => e.id === ui.editing)) endEdit();
+  const editing = Boolean(ui.editing);
   return [
     h('div', { class: 'stack' },
+      editing && h('div', { class: 'label' }, 'Editing an earlier entry'),
       h('input', {
         type: 'text', placeholder: 'Topic, e.g. C#', value: ui.drafts.topic, autocomplete: 'off', 'aria-label': 'Topic',
         oninput: (e) => { ui.drafts.topic = e.target.value; },
@@ -489,9 +532,14 @@ function viewJournal() {
         placeholder: 'What did you learn?', value: ui.drafts.journal, 'aria-label': 'What did you learn?',
         oninput: (e) => { ui.drafts.journal = e.target.value; },
       }),
-      h('div', { class: 'row' },
-        h('span', { class: 'muted small grow' }, 'Your Mac writes the quiz questions when it next syncs.'),
-        h('button', { type: 'button', class: 'btn primary right', onclick: logEntry }, 'Log'))),
+      editing
+        ? h('div', { class: 'row' },
+          h('span', { class: 'muted small grow' }, 'Questions already written stay as they are.'),
+          h('button', { type: 'button', class: 'btn', onclick: () => { endEdit(); render(); } }, 'Cancel'),
+          h('button', { type: 'button', class: 'btn primary', onclick: saveEntryEdit }, 'Save'))
+        : h('div', { class: 'row' },
+          h('span', { class: 'muted small grow' }, 'Your Mac writes the quiz questions when it next syncs.'),
+          h('button', { type: 'button', class: 'btn primary right', onclick: logEntry }, 'Log'))),
     data.entries.length === 0 && h('p', { class: 'muted center' }, 'No entries yet.'),
     data.entries.map(entryCard),
   ];
@@ -501,12 +549,16 @@ function entryCard(entry) {
   const open = ui.expanded.has(entry.id);
   const count = data.cards.filter((c) => c.entryID === entry.id).length;
   const status = count ? plural(count, 'question') : entry.needsQuestions ? 'Waiting for your Mac' : '';
-  return swipeToDelete(h('div', { class: 'card stack' },
+  return swipeToDelete(h('div', {
+    class: `card stack${ui.editing === entry.id ? ' editing' : ''}`,
+    // Tap anywhere on the entry to edit it; the buttons inside keep their own jobs.
+    onclick: (e) => { if (!e.target.closest('button')) editEntry(entry); },
+  },
     h('div', { class: 'row' },
       h('span', { class: 'tag' }, entry.topic),
       h('span', { class: 'muted small' }, dateText(entry.created)),
       h('span', { class: 'muted small right' }, status)),
-    h('div', { class: `pre${open ? '' : ' clamp'}`, onclick: () => toggleExpanded(entry.id) }, entry.text),
+    h('div', { class: `pre${open ? '' : ' clamp'}` }, entry.text),
     h('div', { class: 'row' },
       h('button', { type: 'button', class: 'link', onclick: () => toggleExpanded(entry.id) }, open ? 'Less' : 'More'),
       open && h('button', { type: 'button', class: 'btn sm danger right', onclick: () => { removeEntry(entry.id); render(); } }, 'Delete'))),

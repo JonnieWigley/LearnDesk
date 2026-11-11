@@ -122,6 +122,27 @@ final class Store: ObservableObject {
         return entry
     }
 
+    /// Changes an entry's topic and text. Questions already written from it are kept;
+    /// they just follow a renamed topic.
+    func updateEntry(_ id: UUID, topic: String, text: String) {
+        guard let i = data.entries.firstIndex(where: { $0.id == id }),
+              data.entries[i].topic != topic || data.entries[i].text != text
+        else { return }
+        let now = Self.stamp()
+        var next = data
+        if next.entries[i].topic != topic {
+            for c in next.cards.indices where next.cards[c].entryID == id {
+                next.cards[c].topic = topic
+                next.cards[c].modified = now
+            }
+        }
+        next.entries[i].topic = topic
+        next.entries[i].text = text
+        next.entries[i].modified = now
+        data = next
+        onLocalChange?()
+    }
+
     func deleteEntry(_ id: UUID) {
         let now = Self.stamp()
         var next = data

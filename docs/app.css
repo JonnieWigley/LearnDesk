@@ -70,6 +70,7 @@ nav button[aria-current="page"] { color: var(--accent); border-top-color: var(--
 .card { background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 8px; position: relative; overflow: hidden; }
 .card.tint::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--tint); }
 .card.tint { padding-left: 17px; }
+.card.editing { box-shadow: inset 0 0 0 2px var(--accent); }
 .swipe { position: relative; margin-bottom: 8px; border-radius: 12px; overflow: hidden; }
 .swipe > .card { margin-bottom: 0; touch-action: pan-y; }
 .swipe-under {
