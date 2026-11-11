@@ -424,7 +424,7 @@ function viewIdeas() {
   return [
     segmented([['create', 'Create'], ['research', 'Research'], ['open', 'Open'], ['done', 'Complete']], ui.ideaFilter,
       (value) => { ui.ideaFilter = value; render(); }),
-    kind && h('div', { class: 'row' },
+    kind && h('div', { class: 'row gap-below' },
       h('input', {
         type: 'text', class: 'grow', placeholder: `Add to ${kind}…`, value: ui.drafts.idea, enterKeyHint: 'done', 'aria-label': `New ${kind} idea`,
         oninput: (e) => { ui.drafts.idea = e.target.value; },
