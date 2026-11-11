@@ -75,6 +75,7 @@ struct JournalView: View {
             topic: topic.trimmingCharacters(in: .whitespacesAndNewlines),
             text: text.trimmingCharacters(in: .whitespacesAndNewlines)
         )
+        topic = ""
         text = ""
         if app.claudeReady {
             Task { await store.generateCards(for: entry.id) }

@@ -473,6 +473,7 @@ function logEntry() {
   if (!topic || !text) return;
   // needsQuestions asks the Mac app to write quiz questions the next time it syncs.
   add('entry', { id: newID(), topic, text, created: nowISO(), needsQuestions: true });
+  ui.drafts.topic = '';
   ui.drafts.journal = '';
   render();
 }
