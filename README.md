@@ -6,6 +6,7 @@ synced through your own Supabase project.
 
 - `Sources/` and `build-app.sh`: the Mac app.
 - `docs/`: the phone web app (served by GitHub Pages).
+- `android/`: an Android app (APK) that wraps the phone web app.
 - `supabase.sql`: the one table sync needs.
 
 ## Mac app
@@ -54,6 +55,24 @@ The page contains no data and no keys; it is only the app's code.
 Changes sync a couple of seconds after you make them and at least once a
 minute. The phone app works offline and catches up when it reconnects. If the
 same item is edited on both devices before they sync, the later edit wins.
+
+## Android app (APK)
+
+Instead of adding the web page to the home screen, you can install the APK from
+the repository's Releases page. It is a small shell that loads the same phone
+app from GitHub Pages, so changes to `docs/` reach it without reinstalling, and
+it works offline after the first launch. Its data is separate from the home
+screen version, so sign in under Settings again; everything synced comes back.
+
+To build it yourself (needs a JDK and the Android SDK):
+
+```bash
+cd android && ANDROID_HOME=~/Library/Android/sdk ./gradlew :app:assembleRelease
+```
+
+The APK lands in `android/app/build/outputs/apk/release/`. It is signed with the
+key in `~/.learndesk/`, which is not in the repository. Keep that folder: an
+update only installs over the existing app when it is signed with the same key.
 
 ## Quizzes and your Claude subscription
 

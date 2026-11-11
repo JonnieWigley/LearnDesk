@@ -1,0 +1,47 @@
+plugins {
+    id "com.android.application"
+}
+
+// The signing key lives outside the repository. Updates only install over an
+// existing copy when they are signed with the same key, so keep that folder safe.
+def signingFile = new File(System.getProperty("user.home"), ".learndesk/keystore.properties")
+def signing = new Properties()
+if (signingFile.exists()) {
+    signingFile.withInputStream { signing.load(it) }
+}
+
+android {
+    namespace "io.github.jonniewigley.learndesk"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "io.github.jonniewigley.learndesk"
+        minSdk 29
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            if (signingFile.exists()) {
+                storeFile new File(signingFile.parentFile, signing["storeFile"])
+                storePassword signing["storePassword"]
+                keyAlias signing["keyAlias"]
+                keyPassword signing["keyPassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
